@@ -84,8 +84,21 @@ docs/          Design log, key abstractions and SOLID notes, test notes, UML
 
 ## Stages
 
-| Stage | Tag | What changed |
-|---|---|---|
-| 1 | `stage-1` | Base game with Regular customers only |
-| 2 | `stage-2` | To be added |
-| 3 | `stage-3` | To be added |
+Repository: https://github.com/Abhishek051105/SC2002-sce2
+
+| Stage | Tag | What changed | Class diagram |
+|---|---|---|---|
+| 1 | [`stage-1`](https://github.com/Abhishek051105/SC2002-sce2/tree/stage-1) | Base game with Regular customers only | [stage1/class-diagram.png](docs/uml/stage1/class-diagram.png) |
+| 2 | `stage-2` | To be added | To be added |
+| 3 | `stage-3` | To be added | To be added |
+
+Stage comparisons (new files, changed files with reasons) will be added here for
+stage-1 → stage-2 and stage-2 → stage-3.
+
+## Design documents
+
+- Stage 1 class diagram: [PNG](docs/uml/stage1/class-diagram.png) · [PlantUML source](docs/uml/stage1/class-diagram.puml)
+- Stage 1 sequence diagram (one turn, for reference): [PNG](docs/uml/stage1/sequence-diagram.png) · [PlantUML source](docs/uml/stage1/sequence-diagram.puml)
+- [Key abstractions and SOLID](docs/key-abstractions-and-solid.md)
+- [Design log](docs/design-log.md)
+- [Stage 1 test notes](docs/test-notes.md)
