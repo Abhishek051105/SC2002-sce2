@@ -7,6 +7,24 @@ task each, and the Cashier takes one payment automatically. Once per game you ca
 Happy Hour. You win by ending turn 18 with **at least 4
 paid customers, at least $45.00 revenue and an average satisfaction of at least 60**.
 
+## Demo video
+
+[Watch the demo (about 15 min)](VIDEO-LINK-HERE)
+
+| Time | Segment (brief 6.2) | Presenter |
+|---|---|---|
+| 0:00 | Overview, the three stages and the BCE design | Aaryan |
+| 1:05 | 1. The game launching from the submitted project | Aaryan |
+| 1:25 | 2. Manager choices, including a turn where staff are constrained | Aaryan |
+| 2:15 | 3. A dish going READY → SERVED → payment | Abhishek |
+| 3:15 | 4. VIP and Critic behaviour | Ayush |
+| 4:05 | 5. Stage 3 features: Happy Hour, Host, combo meals | Aekas |
+| 5:15 | 6. One victory and one defeat, plus regression checks | Ayush |
+| 6:35 | 7. Stage tag comparisons (change maps) and the class diagrams | Raghav |
+| 9:15 | Design principles, trade-offs and alternatives | Aekas |
+| 10:45 | 7. Use case and sequence diagram | Abhishek |
+| 13:15 | Individual contributions and learning | Everyone |
+
 ## Build and run
 
 Requires JDK 17 or later. Run from the repository root.
@@ -267,3 +285,15 @@ and Stage 2 script gives exactly its old result on the Stage 3 build:
 - [Key abstractions and SOLID](docs/key-abstractions-and-solid.md)
 - [Design log](docs/design-log.md)
 - [Test notes (Stages 1 to 3)](docs/test-notes.md)
+
+## AI history
+
+Each member keeps their project-related AI chats, in order, under `ai-history/` on their own branch:
+
+| Member | Branch | Stage 1 | Stage 2 | Stage 3 |
+|---|---|---|---|---|
+| Abhishek | [`abhishek`](https://github.com/Abhishek051105/SC2002-sce2/tree/abhishek/ai-history) | [ai-history/stage-1](https://github.com/Abhishek051105/SC2002-sce2/tree/abhishek/ai-history/stage-1) | [ai-history/stage-2](https://github.com/Abhishek051105/SC2002-sce2/tree/abhishek/ai-history/stage-2) | [ai-history/stage-3](https://github.com/Abhishek051105/SC2002-sce2/tree/abhishek/ai-history/stage-3) |
+| Aaryan | [`aaryan`](https://github.com/Abhishek051105/SC2002-sce2/tree/aaryan/ai-history) | [ai-history/stage-1](https://github.com/Abhishek051105/SC2002-sce2/tree/aaryan/ai-history/stage-1) | [ai-history/stage-2](https://github.com/Abhishek051105/SC2002-sce2/tree/aaryan/ai-history/stage-2) | [ai-history/stage-3](https://github.com/Abhishek051105/SC2002-sce2/tree/aaryan/ai-history/stage-3) |
+| Aekas | [`aekas`](https://github.com/Abhishek051105/SC2002-sce2/tree/aekas/ai-history) | [ai-history/stage-1](https://github.com/Abhishek051105/SC2002-sce2/tree/aekas/ai-history/stage-1) | [ai-history/stage-2](https://github.com/Abhishek051105/SC2002-sce2/tree/aekas/ai-history/stage-2) | [ai-history/stage-3](https://github.com/Abhishek051105/SC2002-sce2/tree/aekas/ai-history/stage-3) |
+| Ayush | [`ayush`](https://github.com/Abhishek051105/SC2002-sce2/tree/ayush/ai-history) | [ai-history/stage-1](https://github.com/Abhishek051105/SC2002-sce2/tree/ayush/ai-history/stage-1) | [ai-history/stage-2](https://github.com/Abhishek051105/SC2002-sce2/tree/ayush/ai-history/stage-2) | [ai-history/stage-3](https://github.com/Abhishek051105/SC2002-sce2/tree/ayush/ai-history/stage-3) |
+| Raghav | [`raghav`](https://github.com/Abhishek051105/SC2002-sce2/tree/raghav/ai-history) | [ai-history/stage-1](https://github.com/Abhishek051105/SC2002-sce2/tree/raghav/ai-history/stage-1) | [ai-history/stage-2](https://github.com/Abhishek051105/SC2002-sce2/tree/raghav/ai-history/stage-2) | [ai-history/stage-3](https://github.com/Abhishek051105/SC2002-sce2/tree/raghav/ai-history/stage-3) |
