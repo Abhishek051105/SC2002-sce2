@@ -1,11 +1,25 @@
 package entity;
 
+/**
+ * The Chef: cooks one preparation unit of one order per turn.
+ * An order is READY once all of its item's units are done.
+ *
+ * @author Abhishek, Aaryan
+ * @since 2026-10-26 (Stage 1)
+ */
 public class Chef extends Staff{
+     /** Creates the Chef. */
      public Chef() {
         super("Chef");
     }
- 
-    // cook one unit of an order
+
+    /**
+     * Cooks one unit of an order.
+     *
+     * @param o the order to cook; must be IN_PREPARATION
+     * @throws InvalidActionException if the Chef already acted, the order is missing,
+     *                                or it is not being prepared
+     */
     public void prepare(Order o) throws InvalidActionException {
         checkCanAct();
         if (o == null) {
@@ -18,4 +32,4 @@ public class Chef extends Staff{
         markActed();   // only reached if all checks passed
     }
 }
- 
+

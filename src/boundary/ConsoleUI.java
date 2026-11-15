@@ -13,11 +13,20 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
-/** Input and output only. Never decides whether an action is allowed. */
+/**
+ * Input and output only. Never decides whether an action is allowed.
+ *
+ * @author Ayush, Aekas, Abhishek, Aaryan
+ * @since 2026-10-26 (Stage 1)
+ */
 public class ConsoleUI {
     private final Scanner scanner;
     private final int maxTurns;
 
+    /**
+     * @param scanner  where the manager's input is read from
+     * @param maxTurns total turns, shown as "TURN 3 / 18"
+     */
     public ConsoleUI(Scanner scanner, int maxTurns) {
         this.scanner = scanner;
         this.maxTurns = maxTurns;
@@ -128,6 +137,7 @@ public class ConsoleUI {
         System.out.println("========================================");
     }
 
+    /** Shows the Waiter's options and returns the one picked (1-4). */
     public WaiterTask askWaiterTask() {
         System.out.println("");
         System.out.println("--- Waiter Action ---");
@@ -151,17 +161,19 @@ public class ConsoleUI {
         }
     }
 
+    /** Asks for a customer number (C3 is 3). Uses a default prompt if none is given. */
     public int askCustomerId(String prompt) {
         System.out.print(prompt != null && !prompt.isEmpty() ? prompt : "Enter Customer ID: ");
         return readInt(1, 100);
     }
 
+    /** Asks for a table number between 1 and numTables. */
     public int askTableNo(int numTables) {
         System.out.print("Enter Table Number (1-" + numTables + "): ");
         return readInt(1, numTables);
     }
 
-    /** 0 = Wait */
+    /** Asks the Chef which order to cook. 0 = Wait */
     public int askOrderIdOrWait() {
         System.out.println("");
         System.out.println("--- Chef Action ---");
@@ -187,15 +199,17 @@ public class ConsoleUI {
         return "N/A";
     }
 
+    /** "PASS" or "FAIL" for the final result lines. */
     private String passOrFail(boolean passed) {
         if (passed) {
             return "PASS";
         }
         return "FAIL";
     }
-     //Re-prompts on junk/blank/out of range.
-     //Throws NoSuchElementException if the input runs out (Main catches it).
-     
+    /**
+     * Reads a whole number between min and max. Re-prompts on junk/blank/out of range.
+     * Throws NoSuchElementException if the input runs out (Main catches it).
+     */
     private int readInt(int min, int max) {
         while (true) {
             try {
@@ -218,24 +232,23 @@ public class ConsoleUI {
         }
     }
     
-     //Asks whether to activate Happy Hour at the start of the turn. Can only be used once per game and lasts for 2 turns.
-    
+    /**
+     * Asks whether to activate Happy Hour at the start of the turn. Can only be used once per game and lasts for 2 turns.
+     *
+     * @return true if the manager answered 1 (yes)
+     */
      public boolean askStartHappyHour() {
         System.out.print("Start Happy Hour now? It can be used once and lasts 2 turns (1 = yes, 0 = no): ");
         return readInt(0, 1) == 1;
     }
 
-    
-    //Displays current Happy Hour status and remaining turns.
-    
+    /** Displays current Happy Hour status and remaining turns. */
     public void showHappyHourStatus(int turnsLeft) {
         System.out.println("*** HAPPY HOUR ON: 20% off new orders, " + turnsLeft
                 + " turn(s) left including this one ***");
     }
 
-    
-    //Asks which customer the Host should seat, or 0 to wait.
-    
+    /** Asks which customer the Host should seat, or 0 to wait. */
     public int askHostCustomerIdOrWait() {
         System.out.println("");
         System.out.println("--- Host Action ---");

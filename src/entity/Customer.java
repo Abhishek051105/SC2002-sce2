@@ -1,5 +1,14 @@
 package entity;
 
+/**
+ * Base class for every customer type. Holds the visit's state (satisfaction,
+ * status, turns) and the fixed order of steps: seat, order, serve, finish
+ * eating, pay. Subclasses only change satisfaction decay, food choice and
+ * bill, so the controller and staff never need to know the type.
+ *
+ * @author Raghav, Abhishek, Aekas, Aaryan
+ * @since 2026-10-22 (Stage 1)
+ */
 public abstract class Customer {
 
     private final int customerId;
@@ -12,6 +21,13 @@ public abstract class Customer {
     private int readyToPayTurn;
     private int paidSatisfaction;
 
+    /**
+     * New customers start WAITING in the queue with satisfaction 100.
+     *
+     * @param customerId  customer number (C1, C2, ...), positive
+     * @param arrivalTurn turn the customer arrives, positive
+     * @throws IllegalArgumentException if either value is not positive
+     */
     public Customer(int customerId, int arrivalTurn) {
 
         if (customerId <= 0 || arrivalTurn <= 0) {
@@ -30,26 +46,32 @@ public abstract class Customer {
         this.paidSatisfaction = -1;
     }
 
+    /** @return the customer number (also used as their order number) */
     public int getCustomerId() {
         return customerId;
     }
 
+    /** @return current satisfaction, 0 to 100 */
     public int getSatisfaction() {
         return satisfaction;
     }
 
+    /** @return where the customer is in their visit */
     public CustomerStatus getStatus() {
         return status;
     }
 
+    /** @return satisfaction at the moment of payment, or -1 if not paid yet */
     public int getPaidSatisfaction() {
         return paidSatisfaction;
     }
 
+    /** @return the turn the food was served, or -1 if not served yet */
     public int getServedTurn() {
         return servedTurn;
     }
 
+    /** @return the turn they finished eating, or -1 if not yet */
     public int getReadyToPayTurn() {
         return readyToPayTurn;
     }
@@ -155,6 +177,7 @@ public abstract class Customer {
     // These are final so a subclass (VIP, Critic, ...) can't change the
     // order of the steps. Subclasses only change decay, food choice and bill.
 
+    /** WAITING -> SEATED. Throws IllegalStateException if not waiting. */
     public final void seat() {
 
         if (status != CustomerStatus.WAITING) {
@@ -165,6 +188,7 @@ public abstract class Customer {
         status = CustomerStatus.SEATED;
     }
 
+    /** SEATED -> WAITING_FOR_FOOD. Throws IllegalStateException if not seated. */
     public final void orderTaken() {
 
         if (status != CustomerStatus.SEATED) {
@@ -175,6 +199,7 @@ public abstract class Customer {
         status = CustomerStatus.WAITING_FOR_FOOD;
     }
 
+    /** WAITING_FOR_FOOD -> SERVED, and remembers the turn. */
     public final void serve(int turn) {
 
         if (status != CustomerStatus.WAITING_FOR_FOOD) {
@@ -191,6 +216,7 @@ public abstract class Customer {
         servedTurn = turn;
     }
 
+    /** SERVED -> READY_TO_PAY. Only allowed on a turn after the one they were served. */
     public final void finishEating(int turn) {
 
         if (status != CustomerStatus.SERVED) {
@@ -207,6 +233,10 @@ public abstract class Customer {
         readyToPayTurn = turn;
     }
 
+    /**
+     * READY_TO_PAY -> PAID, on a turn after they finished eating.
+     * Records the satisfaction at payment for the average.
+     */
     public final void markPaid(int turn) {
 
         if (status != CustomerStatus.READY_TO_PAY) {
@@ -223,10 +253,12 @@ public abstract class Customer {
         status = CustomerStatus.PAID;
     }
 
+    /** @return true if the customer is waiting for the Cashier */
     public boolean isReadyToPay() {
         return status == CustomerStatus.READY_TO_PAY;
     }
 
+    /** @return a one-line summary, for debugging */
     @Override
     public String toString() {
 

@@ -22,6 +22,9 @@ import java.util.List;
  * Runs the steps of each turn in order. It never checks customer subclasses (no instanceof),
  * it just calls methods on Customer and lets each subclass behave its own way.
  * Catches InvalidActionException and re-prompts.
+ *
+ * @author Aaryan, Abhishek
+ * @since 2026-10-26 (Stage 1)
  */
 public class GameController {
     private final Restaurant restaurant;
@@ -32,6 +35,12 @@ public class GameController {
     private final PricingPolicy standardPricing = new StandardPricing();
     private int currentTurn;
 
+    /**
+     * @param restaurant the game state
+     * @param ui         console input and output
+     * @param schedule   who arrives on which turn
+     * @param objective  the victory targets
+     */
     public GameController(Restaurant restaurant, ConsoleUI ui,
                           ArrivalSchedule schedule, Objective objective) {
         this.restaurant = restaurant;
@@ -68,7 +77,7 @@ public class GameController {
         happyHour.endTurn();   // last: Happy Hour counts down after the whole turn
     }
 
-    /** Step 1 */
+    /** Step 1: new customers join the queue, then the start-of-turn display. */
     private void handleArrivals() {
         List<Customer> arrivals = schedule.customersArrivingAt(currentTurn);
         for (Customer c : arrivals) {
@@ -230,6 +239,7 @@ public class GameController {
         return standardPricing;
     }
 
+    /** The customer with this number, or an InvalidActionException if there isn't one. */
     private Customer getCustomerOrThrow(int id) throws InvalidActionException {
         Customer c = restaurant.findCustomer(id);
         if (c == null) {
@@ -238,6 +248,7 @@ public class GameController {
         return c;
     }
 
+    /** The order for this customer number, or an InvalidActionException if there isn't one. */
     private Order getOrderOrThrow(int id) throws InvalidActionException {
         Order o = restaurant.findOrder(id);
         if (o == null) {

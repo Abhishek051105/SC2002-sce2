@@ -1,11 +1,23 @@
 package entity;
 
+/**
+ * Stage 2 Critic customer: loses 12 satisfaction per waiting turn and
+ * always orders the most expensive item on the menu. Pays full price.
+ *
+ * @author Aekas, Abhishek
+ * @since 2026-11-01 (Stage 2)
+ */
 public class CriticCustomer extends Customer {
 
+    /**
+     * @param customerId  customer number (C1, C2, ...)
+     * @param arrivalTurn turn the customer arrives
+     */
     public CriticCustomer(int customerId, int arrivalTurn) {
         super(customerId, arrivalTurn);
     }
 
+    /** @return 12 satisfaction lost per waiting turn */
     @Override
     public int getSatisfactionDecay() {
         return 12;
@@ -31,6 +43,7 @@ public class CriticCustomer extends Customer {
         return mostExpensive;
     }
 
+    /** @return "Critic" */
     @Override
     public String getTypeLabel() {
         return "Critic";

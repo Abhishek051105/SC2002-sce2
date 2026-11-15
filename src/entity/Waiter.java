@@ -1,6 +1,14 @@
 package entity;
 
+/**
+ * The Waiter: each turn can seat a customer, take an order or serve a
+ * ready dish (or wait).
+ *
+ * @author Aekas, Aaryan
+ * @since 2026-10-26 (Stage 1)
+ */
 public class Waiter extends Staff {
+    /** Creates the Waiter. */
     public Waiter() {
         super("Waiter");
     }

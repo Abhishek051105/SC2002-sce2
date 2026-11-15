@@ -7,6 +7,9 @@ import java.util.List;
 /**
  * Holds the game state: tables, queue, customers, orders, menu, staff and
  * stats. Also does the clean-up when a customer leaves (customerLeft).
+ *
+ * @author Aaryan, Abhishek, Aekas
+ * @since 2026-10-26 (Stage 1)
  */
 public class Restaurant {
     private final List<Table> tables = new ArrayList<>();
@@ -39,6 +42,7 @@ public class Restaurant {
         allCustomers.add(c);
     }
 
+    /** Takes a customer out of the queue (once seated, or when they leave). */
     public void removeFromQueue(Customer c) {
         waitingQueue.remove(c);
     }
@@ -62,18 +66,22 @@ public class Restaurant {
         }
     }
 
+    /** @return the queue in arrival order (read-only) */
     public List<Customer> getWaitingQueue() {
         return Collections.unmodifiableList(waitingQueue);
     }
 
+    /** @return every customer who has arrived, including paid and departed (read-only) */
     public List<Customer> getAllCustomers() {
         return Collections.unmodifiableList(allCustomers);
     }
 
+    /** @return the tables (read-only) */
     public List<Table> getTables() {
         return Collections.unmodifiableList(tables);
     }
 
+    /** @return all staff, so the controller can reset them at the start of each turn */
     public List<Staff> getAllStaff() {
         return List.of(waiter, host, chef, cashier);
     }
@@ -116,30 +124,37 @@ public class Restaurant {
         return null;
     }
 
+    /** Stores a newly taken order. */
     public void addOrder(Order o) {
         allOrders.add(o);
     }
 
+    /** @return the menu */
     public Menu getMenu() {
         return menu;
     }
 
+    /** @return the Waiter */
     public Waiter getWaiter() {
         return waiter;
     }
 
+    /** @return the Host (Stage 3) */
     public Host getHost() {
         return host;
     }
 
+    /** @return the Chef */
     public Chef getChef() {
         return chef;
     }
 
+    /** @return the Cashier */
     public Cashier getCashier() {
         return cashier;
     }
 
+    /** @return the game's running totals */
     public GameStats getStats() {
         return stats;
     }

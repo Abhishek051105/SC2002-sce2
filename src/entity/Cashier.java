@@ -1,6 +1,14 @@
 package entity;
 
+/**
+ * The Cashier: takes one payment per turn automatically (the manager
+ * doesn't choose its action).
+ *
+ * @author Aekas, Abhishek, Aaryan
+ * @since 2026-10-26 (Stage 1)
+ */
 public class Cashier extends Staff {
+    /** Creates the Cashier. */
     public Cashier() {
         super("Cashier");
     }
