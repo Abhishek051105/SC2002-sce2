@@ -348,6 +348,49 @@ From a grading perspective, it successfully demonstrates:
 
 However, it leaves C2 unseated and the restaurant completely idle from Turn 5 to 18. A much cleaner, more robust sequence is one where the invalid inputs are tested on C2 (VIP), rejected, and then successfully recovered (C2 gets seated at Table 2 and continues cleanly).
 
+---
+
+## Chat 05: Documenting Stage 2 Test Matrices & VIP Invalid-Input Recovery
+
+- **Tool:** Claude (claude.ai)
+- **Date:** 4 November 2026 (SGT)
+
+### 1. Designing `tests/stage2_invalid_inputs.txt` for VIP Customer Validation (4 November 2026, 16:50)
+
+**Prompt:**
+
+> I am creating `tests/stage2_invalid_inputs.txt` (`63073be`) to test error recovery on our Stage 2 customer types (specifically C2, the `VIPCustomer` arriving on Turn 4):
+> - On Turn 4, before seating C2 at Table 2 (`1, 2, 2`), the script attempts:
+>   1. `2, 2` — Waiter tries to take an order from VIP C2 while C2 is still `WAITING` in the queue (`Customer 2 is not SEATED`).
+>   2. `1, 2, 99` — Waiter tries to seat VIP C2 at out-of-range Table 99 (`Please enter a number between 1 and 2`), then retries with Table 1 (`Table 1 is already occupied`).
+>   3. Finally enters valid Table 2 (`1, 2, 2`), which seats VIP C2 at Table 2.
+> - On Turn 5, the Chef first tries to cook `Order 1` (which is already `SERVED`) before cooking C2's `Order 2`.
+>
+> When I run `java -cp out control.Main < tests/stage2_invalid_inputs.txt`, it recovers from every invalid input and finishes Turn 18 with `5 paid, $73.50, 75.6 average satisfaction, VICTORY`.
+
+**Response:**
+
+Testing invalid actions specifically against the `VIPCustomer` (C2) on Turns 4 and 5 verifies two important properties for Stage 2:
+1. **Inherited Lifecycle Guards (LSP):** `VIPCustomer` inherits the exact same `final` state guards from `Customer` (`WAITING -> SEATED -> WAITING_FOR_FOOD`), so attempting `takeOrder` while C2 is `WAITING` is rejected identically to a `RegularCustomer`.
+2. **State Preservation Under Retry:** After the rejected attempts on Turn 4 and Turn 5, C2 still receives the 10% VIP discount (`$13.50`) and the 5-point/turn VIP decay rate (`90` satisfaction at service), producing the exact `5 paid, $73.50, 75.6 VICTORY` baseline.
+
+### 2. Organizing `docs/test-notes.md` for Stage 2 Verification (4 November 2026, 17:05)
+
+**Prompt:**
+
+> In `docs/test-notes.md`, I added a summary table comparing the 3 Stage 1 scripts (run with `java -cp out control.Main regular`) and the 3 Stage 2 scripts (run with `java -cp out control.Main`):
+> - `stage1_victory.txt` (`regular`): `5 paid, 0 left, $66.00, 79.2, VICTORY`
+> - `stage1_defeat.txt` (`regular`): `4 paid, 0 left, $51.00, 58.0, DEFEAT`
+> - `stage1_invalid_inputs.txt` (`regular`): `5 paid, 0 left, $66.00, 79.2, VICTORY`
+> - `stage2_victory.txt`: `5 paid, 0 left, $73.50, 75.6, VICTORY`
+> - `stage2_defeat.txt`: `4 paid, 0 left, $58.50, 53.8, DEFEAT`
+> - `stage2_invalid_inputs.txt`: `5 paid, 0 left, $73.50, 75.6, VICTORY`
+>
+> Is this format clear for the TA to reproduce every test case from the command line?
+
+**Response:**
+
+Yes — listing the exact command (`java -cp out control.Main < tests/...` vs. `java -cp out control.Main regular < tests/...`) alongside Paid count, Unhappy left, Revenue, Average satisfaction, and Final outcome makes every test case reproducible in one command.
 
 ---
 

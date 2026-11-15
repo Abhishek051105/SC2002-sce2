@@ -228,6 +228,53 @@ That confirms the script is aligned with the turn-by-turn pipeline:
 
 ---
 
+## Chat 04: Designing `tests/stage1_invalid_inputs.txt` & Turn Display Formatting
+
+- **Tool:** Claude (claude.ai)
+- **Date:** 29 October 2026 (SGT)
+
+### 1. Verifying Turn Display Formatting in `ConsoleUI` (29 October 2026, 13:10)
+
+**Prompt:**
+
+> In `ConsoleUI.showStartOfTurn(int turn, Restaurant restaurant)`, I format four sections at the start of every turn:
+> 1. Waiting queue (`C1(Regular, sat=100, status=WAITING)`)
+> 2. Tables (`Table 1: Occupied by C1 (SEATED, sat=92)` or `Free`)
+> 3. Active orders (`Order #1 [C1, Salad, status=READY, remPrep=0, bill=$9.00]`)
+> 4. Staff status (`Waiter: Ready`, `Chef: Ready`, `Cashier: Ready`)
+>
+> Does showing `status`, `remPrep`, and `bill` on every active order cover everything the manager needs in Section 3.1 of the brief?
+
+**Response:**
+
+Yes — Section 3.1 of the brief requires the start-of-turn display to show:
+- Current turn number (`Turn X / 18`)
+- Waiting customers and their satisfaction
+- Table occupancy and seated customer status/satisfaction
+- Active orders, their preparation progress (`remPrep`), and their status (`PLACED`, `COOKING`, `READY`, `SERVED`)
+- Staff availability (`Ready` vs. `Acted`)
+- Cumulative statistics (`Paid`, `Unhappy left`, `Revenue`, `Avg satisfaction`)
+
+Displaying all of those fields cleanly in `showStartOfTurn` ensures the human manager has complete information before making Waiter and Chef decisions.
+
+### 2. Constructing `tests/stage1_invalid_inputs.txt` (29 October 2026, 16:40)
+
+**Prompt:**
+
+> For `tests/stage1_invalid_inputs.txt`, I took the winning input sequence from `tests/stage1_victory.txt` and injected invalid manager choices on Turns 1, 2, and 3:
+> - Turn 1: Out-of-range menu choice `9`, non-numeric input `abc`, trying to take an order from C1 while C1 is still `WAITING` (`2, 1`), trying to seat nonexistent customer `C99` (`1, 99, 1`), and trying to cook nonexistent `Order 99` (`99`) before making the valid Turn 1 moves (`1, 1, 1` and `0`).
+> - Turn 2: Trying to seat C1 again while already `SEATED` (`1, 1, 2`) before taking C1's order (`2, 1`) and cooking `Order 1` (`1`).
+> - Turn 2/3: Trying to serve `Order 1` on the same turn it became `READY` before serving it on Turn 3.
+>
+> When I run `java -cp out control.Main < tests/stage1_invalid_inputs.txt`, it prints the error message for each invalid attempt, lets the staff member retry, and still finishes Turn 18 with the exact same `5 paid, $66.00, 79.2 average satisfaction, VICTORY` as `stage1_victory.txt`!
+
+**Response:**
+
+That is an ideal validation test script:
+- Because `stage1_invalid_inputs.txt` injects invalid boundary inputs (`9`, `abc`) and invalid domain actions (seating an already-seated customer, taking an order from an unseated customer, serving an order on the turn it became `READY`) into the exact `stage1_victory.txt` trajectory and still finishes with **`5 paid, $66.00, 79.2 VICTORY`**, it proves mathematically that invalid choices never consume a staff member's turn or corrupt domain state.
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**

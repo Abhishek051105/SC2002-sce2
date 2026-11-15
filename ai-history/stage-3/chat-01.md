@@ -68,6 +68,38 @@ That test suite covers every functional and regression requirement in Sections 4
 
 ---
 
+### 2. Designing `tests/stage3_invalid_inputs.txt` and `tests/stage3_abandonment.txt` (9–14 November 2026)
+
+**Prompt (9 November 2026, 11:30):**
+
+> For `tests/stage3_invalid_inputs.txt` (`6ae785d`), I injected Stage 3-specific invalid actions into the `stage3_victory.txt` sequence:
+> - Out-of-range input `9` at the `askStartHappyHour()` prompt (`0` or `1` required).
+> - Having the `Host` try to seat nonexistent customer `C99` on Turn 1 before seating `C1` at Table 1.
+> - Having the `Host` try to seat `C2` at occupied Table 1 on Turn 4 (`Table 1 is already occupied`) before seating `C2` at free Table 2.
+> - Having the `Waiter` try to seat `C2` again right after the `Host` already seated `C2` (`Customer 2 is not WAITING`).
+>
+> And on 14 November (`991d1a3`), I also created `tests/stage3_abandonment.txt` where C4 (`CriticCustomer`, arriving on Turn 10 with `-12` decay per turn) is seated by the Host at Table 2 on Turn 10 and orders `Salad + Pasta`, but the Chef never finishes cooking Order 4. Can you check C4's exact satisfaction countdown from Turn 10 to Turn 18 in `stage3_abandonment.txt`?
+
+**Response:**
+
+Let's verify C4's satisfaction countdown in `tests/stage3_abandonment.txt` (with Happy Hour never activated, so C4 loses `12` points at the end of every turn from Turn 10 onwards):
+- **Turn 10 end:** `100 - 12 = 88`
+- **Turn 11 end:** `88 - 12 = 76`
+- **Turn 12 end:** `76 - 12 = 64`
+- **Turn 13 end:** `64 - 12 = 52`
+- **Turn 14 end:** `52 - 12 = 40`
+- **Turn 15 end:** `40 - 12 = 28`
+- **Turn 16 end:** `28 - 12 = 16`
+- **Turn 17 end:** `16 - 12 = 4`
+- **Turn 18 end:** `Math.max(0, 4 - 12) = 0` -> `decreaseSatisfaction()` transitions C4 to `CustomerStatus.LEFT` and returns `true`!
+
+When `decreaseSatisfaction()` returns `true` at the end of Turn 18, `GameController.handleEndOfTurnWaiting()` calls `restaurant.customerLeft(c4, order4, table2)`, which:
+1. Cancels C4's unfinished `Order 4` (`OrderStatus.CANCELLED`),
+2. Releases `Table 2` (`table2.release()`), and
+3. Increments `stats.recordAbandonment()` (`Unhappy left: 1`), resulting in `3 paid, 1 unhappy left, $42.30 revenue, 91.0 avg satisfaction, DEFEAT`.
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**
