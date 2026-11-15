@@ -164,6 +164,93 @@ Both refactors directly strengthen your OOP design evidence:
 
 ---
 
+## 5. Designing `Money.java` and Integer-Cent Formatting (24 Oct 2026)
+
+### Me
+
+> For currency representation in Stage 1, I wrote `Money.java` as a utility class with a `private Money()` constructor and `public static String format(int cents)`:
+>
+> ```java
+> package entity;
+>
+> public final class Money {
+>     private Money() {
+>     }
+>
+>     public static String format(int cents) {
+>         int abs = Math.abs(cents);
+>         int dollars = abs / 100;
+>         int rem = abs % 100;
+>         String sign = cents < 0 ? "-" : "";
+>         return String.format("%s$%d.%02d", sign, dollars, rem);
+>     }
+> }
+> ```
+>
+> Why is storing prices and revenue as `int` cents (`900`, `1500`, `1800`) and formatting via `Money.format(int)` better than using `double` for prices in `MenuItem` and `GameStats`?
+
+### Claude
+
+Using `int` cents throughout the domain and formatting only at the display boundary via `Money.format(int)` solves two common issues in financial/simulation code:
+
+1. **Eliminates Binary Floating-Point Representation Errors:**
+   - In IEEE 754 `double`, values like `0.10` and `0.20` do not have exact binary representations (`0.1 + 0.2 == 0.30000000000000004`). When summing revenue across 18 turns or comparing against the `$45.00` objective threshold, floating-point drift can cause subtle boundary bugs.
+   - With `int` cents, `$45.00` is exact integer `4500`, `$9.00` is `900`, `$15.00` is `1500`, and `$18.00` is `1800`. Comparisons like `stats.getTotalRevenueCents() >= minRevenueCents` are 100% exact.
+2. **Single Responsibility for Currency Formatting:**
+   - Making `Money` `final` with a `private` constructor prevents accidental instantiation, and keeping `"$%d.%02d"` in `Money.format` means `ConsoleUI` never duplicates ` cents / 100.0` formatting strings.
+
+### Me (Follow-up)
+
+> Should `MenuItem` also validate its constructor parameters (`name`, `priceCents`, `prepUnits`) so invalid menu items can't be constructed?
+
+### Claude
+
+Yes — adding fail-fast validation in `MenuItem(String name, int priceCents, int prepUnits)`:
+```java
+if (name == null || name.isBlank()) {
+    throw new IllegalArgumentException("Menu item name cannot be empty");
+}
+if (priceCents <= 0) {
+    throw new IllegalArgumentException("Price must be positive");
+}
+if (prepUnits < 1) {
+    throw new IllegalArgumentException("Prep units must be at least 1");
+}
+```
+guarantees that every `MenuItem` in `Menu` has a non-empty name, a positive price in cents, and at least 1 unit of Chef preparation work before an `Order` can ever be created from it.
+
+---
+
+## 6. Drafting the Stage 1 UML Class & Sequence Diagrams (28 Oct 2026)
+
+### Me
+
+> I am putting together our Stage 1 UML snapshot in `docs/uml/stage1/class-diagram.puml` and `docs/uml/stage1/sequence-diagram.puml`. In PlantUML, how should we distinguish Composition (`*--`), Aggregation/Association (`-->`), Inheritance (`<|--`), and Dependency (`..>`) across our Stage 1 classes so we follow the course UML notation strictly?
+
+### Claude
+
+Here is how the four relationship types map to your Stage 1 classes:
+
+1. **Generalization / Inheritance (`<|--`):**
+   - `Customer <|-- RegularCustomer`
+   - `Staff <|-- Waiter`, `Staff <|-- Chef`, `Staff <|-- Cashier`
+2. **Composition (`*--`, filled diamond — lifecycle owned by container):**
+   - `Restaurant *-- "1" Menu`, `Restaurant *-- "2" Table`, `Restaurant *-- "1" Waiter`, `Restaurant *-- "1" Chef`, `Restaurant *-- "1" Cashier`, `Restaurant *-- "1" GameStats`
+   - `Menu *-- "1..*" MenuItem`
+   - `GameController *-- "1" Restaurant`, `GameController *-- "1" ConsoleUI`, `GameController *-- "1" ArrivalSchedule`, `GameController *-- "1" Objective`
+3. **Association (`-->`, navigability to domain entities whose lifecycle moves across queues/tables):**
+   - `Restaurant o-- "0..*" Customer : waitingQueue`
+   - `Restaurant o-- "0..*" Order : orders`
+   - `Table --> "0..1" Customer : currentCustomer`
+   - `Order --> "1" Customer : customer` and `Order --> "1" MenuItem : item`
+4. **Dependency (`..>`, dashed arrow — parameter or return type usage without field ownership):**
+   - `Waiter ..> Table`, `Waiter ..> Menu`, `Waiter ..> Order`
+   - `Chef ..> Order`
+   - `Cashier ..> Customer`
+   - `Objective ..> GameStats`
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**

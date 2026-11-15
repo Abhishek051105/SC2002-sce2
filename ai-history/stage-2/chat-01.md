@@ -126,6 +126,75 @@ Yes — that is a classic **Liskov Substitution Principle (LSP)** point:
 
 ---
 
+## 4. Colour-Coding the Stage 2 Class Diagram (`docs/uml/stage2/class-diagram.puml`) (4 Nov 2026)
+
+### Me
+
+> In `docs/uml/stage2/class-diagram.puml`, I want to make it visually obvious to the marker which classes were newly added in Stage 2 (`VIPCustomer`, `CriticCustomer`, `CustomerType`) and which existing classes were modified (`Customer`, `RegularCustomer`, `ArrivalSchedule`, `GameConfig`, `Main`, `ConsoleUI`), while leaving the 12 untouched Stage 1 classes in the default background colour.
+>
+> In PlantUML, can I apply `#D9F2D9` (light green) to new Stage 2 classes and `#FFF2C2` (light yellow) to modified Stage 1 classes directly on the `class` / `enum` declarations?
+
+### Claude
+
+Yes! PlantUML supports per-class background hex colours right after the stereotype:
+
+```plantuml
+abstract class Customer <<entity>> #FFF2C2 {
+    ...
+    + {abstract} getTypeLabel() : String
+}
+
+class VIPCustomer <<entity>> #D9F2D9 {
+    - {static} DECAY_PER_TURN : int = 5
+    + VIPCustomer(customerId : int, arrivalTurn : int)
+    + getSatisfactionDecay() : int
+    + calculateBill(rawPriceCents : int) : int
+    + getTypeLabel() : String
+}
+
+class CriticCustomer <<entity>> #D9F2D9 {
+    - {static} DECAY_PER_TURN : int = 12
+    + CriticCustomer(customerId : int, arrivalTurn : int)
+    + getSatisfactionDecay() : int
+    + chooseMenuItem(menu : Menu) : MenuItem
+    + getTypeLabel() : String
+}
+
+enum CustomerType <<control>> #D9F2D9 {
+    REGULAR
+    VIP
+    CRITIC
+}
+```
+
+Adding a small `legend` block at the bottom of the diagram explaining:
+- **White:** Unchanged from Stage 1 (`GameController`, `Waiter`, `Chef`, `Cashier`, `Order`, `Menu`, `MenuItem`, `Table`, `Staff`, `Restaurant`, `GameStats`, `Objective`, `Money`)
+- **Yellow (`#FFF2C2`):** Modified in Stage 2
+- **Green (`#D9F2D9`):** Added in Stage 2
+
+visually proves your **Open/Closed Principle (OCP)** claim at a single glance: the core game engine, kitchen, and staff hierarchies are completely white (untouched).
+
+---
+
+## 5. Verifying Guard Conditions & Activation Lifelines in the Stage 2 Sequence Diagram (4 Nov 2026)
+
+### Me
+
+> In my Stage 2 sequence diagram (`docs/uml/stage2/sequence-diagram.puml`), I added two `alt` fragments:
+> 1. On Turn 4, an `alt` inside `loop [until valid Waiter task or WAIT]` showing what happens if the manager tries to seat C2 (`VIPCustomer`) at occupied Table 1 (`Waiter.seat(c2, table1)` throws `InvalidActionException("Table 1 is occupied")`, `ui.showError(...)` prints the error, and the loop re-prompts without calling `markActed()`) vs. seating C2 at free Table 2.
+> 2. On Turn 5, an `alt` comparing the manager choosing `TAKE_ORDER` for C2 (locking in `$13.50` and serving on Turn 6 at satisfaction `90`) vs. choosing `WAIT` (delaying C2 by 1 turn so C2's satisfaction drops to `85`).
+>
+> Can you check if my activation bars (`activate` / `deactivate`) on `Waiter` need to be closed inside both branches of the Turn 4 `alt` block so PlantUML doesn't draw an unclosed activation bar?
+
+### Claude
+
+Good catch — PlantUML processes `activate` and `deactivate` sequentially from top to bottom rather than branching state across `alt` / `else` blocks:
+- If you call `activate Waiter` inside the `[invalid choice: Table 1 is occupied]` branch, you must call `deactivate Waiter` right after `Waiter --x Controller : throws InvalidActionException("Table 1 is occupied")` *before* the `else [valid choice: Table 2 is free]` divider.
+- Then, inside the `else` branch, call `activate Waiter` when `Controller -> Waiter : seat(c2, table2)` is invoked and `deactivate Waiter` when `Waiter --> Controller : void` returns.
+- Doing that keeps the lifeline activation bars properly balanced in both branches of the `alt` fragment.
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**

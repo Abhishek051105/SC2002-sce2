@@ -121,6 +121,98 @@ Including both the Turn 10 Happy Hour `alt` (`$19.44` at sat `76` vs. `$24.30` a
 
 ---
 
+## 3. Verifying Stacked Discounts When a VIP Orders a `ComboMeal` During `HappyHour` (6 Nov 2026)
+
+### Me
+
+> I want to double-check how my `ComboMeal` price calculation interacts with `VIPCustomer.calculateBill` and Aekas's `HappyHour.applyTo`.
+>
+> Suppose a `VIPCustomer` orders `ComboMeal(Burger, Salad)` during `HappyHour`:
+> 1. `Burger` (`1500`) + `Salad` (`900`) = `2400` cents.
+> 2. In `ComboMeal` constructor: `((2400 * 90) + 50) / 100 = 2160` cents (`$21.60`).
+> 3. In `VIPCustomer.calculateBill(2160)`: `((2160 * 90) + 50) / 100 = 1944` cents (`$19.44`).
+> 4. In `HappyHour.applyTo(1944)`: `((1944 * 80) + 50) / 100 = 155570 / 100 = 1555` cents (`$15.55`).
+>
+> And in our Stage 3 victory run (`tests/stage3_victory.txt`), on Turn 10 C4 is a `CriticCustomer` who orders `ComboMeal(Salad, Pasta)` (`2430` cents) during `HappyHour`:
+> - `c4.calculateBill(2430)` = `2430` cents (Critic pays full price).
+> - `happyHour.applyTo(2430)` = `((2430 * 80) + 50) / 100 = 1944` cents (`$19.44`).
+>
+> Does this confirm that `ComboMeal`, `Customer.calculateBill`, and `PricingPolicy.applyTo` compose cleanly in any combination without knowing about each other?
+
+### Claude
+
+Yes — that trace is a great demonstration of **orthogonal composition** across three independent abstractions:
+1. **`MenuItem` / `ComboMeal`** computes the item's menu price (`2430` cents for `Salad + Pasta`, `2160` cents for `Burger + Salad`) at construction time.
+2. **`Customer.calculateBill(int)`** applies customer-specific discounts (`10%` for `VIPCustomer`, `0%` for `RegularCustomer` and `CriticCustomer`).
+3. **`PricingPolicy.applyTo(int)`** applies turn-based promotional pricing (`20%` during `HappyHour`, `0%` under `StandardPricing`) after customer discounts.
+
+Because each step takes an `int` in cents and returns an `int` in cents rounded to the nearest cent via `((cents * rate) + 50) / 100`, all three mechanisms compose in `Waiter.takeOrder`:
+```java
+int billCents = pricing.applyTo(customer.calculateBill(item.getPriceCents()));
+```
+with zero coupling between `ComboMeal`, `VIPCustomer`, and `HappyHour`.
+
+---
+
+## 4. Structuring Lifelines & Combined Fragments in the Stage 3 Sequence Diagram (12 Nov 2026)
+
+### Me
+
+> In my first draft of the Stage 3 sequence diagram (`e1e8335` / `e45f8f7`), I showed a generic 1-turn slice. After checking the sequence diagram rubric in Section 5 of the brief, I want to upgrade `docs/uml/stage3/sequence-diagram.puml` (`92c1afc` / `ac67413`) so that it traces a single concrete use case from arrival all the way to payment and the Turn 18 objective check, with explicit `opt`, `alt`, and `loop` combined fragments.
+>
+> How should I order the participant lifelines from left to right so arrows don't cross awkwardly across the diagram?
+
+### Claude
+
+Ordering lifelines from left to right following the **Boundary -> Control -> Entity (Staff -> Domain Objects -> Stats/Objective)** call flow minimizes crossing arrows:
+
+1. **Actor & Boundary (Leftmost):**
+   - `actor Manager`
+   - `participant "ui : ConsoleUI" as UI <<boundary>>`
+2. **Control Layer:**
+   - `participant "controller : GameController" as Controller <<control>>`
+   - `participant "schedule : ArrivalSchedule" as Schedule <<control>>`
+   - `participant "objective : Objective" as Objective <<control>>`
+3. **Entity Container & Turn Policies:**
+   - `participant "restaurant : Restaurant" as Restaurant <<entity>>`
+   - `participant "happyHour : HappyHour" as HH <<entity>>`
+4. **Staff & Tables:**
+   - `participant "host : Host" as Host <<entity>>`
+   - `participant "table1 : Table" as Table1 <<entity>>`
+   - `participant "table2 : Table" as Table2 <<entity>>`
+   - `participant "waiter : Waiter" as Waiter <<entity>>`
+   - `participant "chef : Chef" as Chef <<entity>>`
+   - `participant "cashier : Cashier" as Cashier <<entity>>`
+5. **Customer, Menu, Order & Stats (Rightmost):**
+   - `participant "c4 : CriticCustomer" as C4 <<entity>>`
+   - `participant "menu : Menu" as Menu <<entity>>`
+   - `participant "sp : ComboMeal" as SP <<entity>>`
+   - `participant "order4 : Order" as Order4 <<entity>>`
+   - `participant "stats : GameStats" as Stats <<entity>>`
+
+With that left-to-right ordering, requests flow cleanly from `Manager -> UI -> Controller` rightward into `Host`, `Waiter`, `Chef`, and `Cashier`, and then into `C4`, `Menu`, `Order4`, and `Stats`.
+
+---
+
+## 5. Final Audit of Documentation, UML PNGs & Code Line Citations (14 Nov 2026)
+
+### Me
+
+> We are doing our final pre-submission check before tagging `stage-3`. I rendered the updated PNGs for `docs/uml/stage2/sequence-diagram.png` and `docs/uml/stage3/sequence-diagram.png` (`ede3bbb`, `4a51000`, `5645c38`) and checked `docs/key-abstractions-and-solid.md` and `README.md`.
+>
+> Can you verify that all 5 SOLID principles in `docs/key-abstractions-and-solid.md` cite concrete classes and methods from our final `stage-3` codebase?
+
+### Claude
+
+Here is a quick verification of your 5 SOLID citations in `docs/key-abstractions-and-solid.md` against the final `stage-3` codebase:
+- **SRP:** `ConsoleUI` (boundary I/O only), `GameController` (turn orchestration), `Order` (kitchen preparation state machine), `Money` (integer-cent formatting), and `Restaurant` (`completePayment` and `customerLeft` state coordination).
+- **OCP:** Adding `VIPCustomer` and `CriticCustomer` in Stage 2 without modifying `GameController`, `Waiter`, `Chef`, `Cashier`, or `Order`; adding `ComboMeal extends MenuItem` in Stage 3 without modifying `Order`, `Chef`, or `CriticCustomer.chooseMenuItem(Menu)`.
+- **LSP:** `RegularCustomer`, `VIPCustomer`, and `CriticCustomer` preserving `Customer`'s `final` lifecycle transitions and `IllegalArgumentException` precondition checks in `chooseMenuItem(Menu)` and `calculateBill(int)`; `ComboMeal` substituting seamlessly for `MenuItem`.
+- **ISP:** Keeping role-specific action signatures on `Host`, `Waiter`, `Chef`, and `Cashier` rather than polluting `Staff` with dummy methods; keeping `PricingPolicy` as a focused single-method interface (`applyTo(int billCents)`).
+- **DIP:** `Waiter.takeOrder(Customer, Menu, PricingPolicy)` depending on the `PricingPolicy` interface while `GameController.currentPricing()` supplies `HappyHour` or `StandardPricing`.
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**
