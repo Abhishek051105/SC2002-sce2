@@ -90,6 +90,59 @@ Yes, that phrasing is accurate and connects directly to Liskov Substitution Prin
 
 ---
 
+## 3. Deterministic Tie-Breaking in `CriticCustomer.chooseMenuItem(Menu)` (1 Nov 2026)
+
+### Me
+
+> In `CriticCustomer.chooseMenuItem(Menu menu)`, I used strict `>` when comparing prices:
+>
+> ```java
+> MenuItem mostExpensive = menu.getItem(0);
+> for (int i = 1; i < menu.size(); i++) {
+>     MenuItem candidate = menu.getItem(i);
+>     if (candidate.getPriceCents() > mostExpensive.getPriceCents()) {
+>         mostExpensive = candidate;
+>     }
+> }
+> return mostExpensive;
+> ```
+>
+> Why is strict `>` better than `>=` here, and should I mention this in `docs/design-log.md`?
+
+### Claude
+
+Using strict `>` (`candidate.getPriceCents() > mostExpensive.getPriceCents()`) provides a clean **first-highest tie-breaking rule**:
+- If two menu items ever have the exact same highest price, `>` keeps the first one encountered in menu order (`index 0, 1, 2, ...`), whereas `>=` would overwrite it with the last one.
+- Documenting that `CriticCustomer` selects the highest-priced item on the menu (with ties broken by earliest menu index) in `docs/design-log.md` and `docs/key-abstractions-and-solid.md` directly satisfies Section 2.2 of the brief (*"Use a documented deterministic rule... State the rule in your README or design notes"*).
+
+---
+
+## 4. Documenting Stage 2 OCP & LSP Evidence in `docs/key-abstractions-and-solid.md` (1–4 Nov 2026)
+
+### Me
+
+> I updated `docs/key-abstractions-and-solid.md` (`b60d633`) and `docs/design-log.md` (`c69af73`) to cover our Stage 2 additions (`VIPCustomer` and `CriticCustomer`).
+>
+> To make our Open/Closed Principle (OCP) explanation concrete for the report, I contrasted how `Waiter.takeOrder(Customer, Menu)` works in our code vs. how a procedural/non-OCP design with `instanceof` would look:
+>
+> ```java
+> // Our polymorphic design in Waiter.takeOrder (unchanged from Stage 1):
+> MenuItem item = customer.chooseMenuItem(menu);
+> int billCents = customer.calculateBill(item.getPriceCents());
+> ```
+>
+> Can you check if tracing Customer C2 (`VIPCustomer`, arrives Turn 4, orders Burger `$15.00 -> $13.50`, loses 5/turn) and Customer C4 (`CriticCustomer`, arrives Turn 10, orders Pasta `$18.00`, loses 12/turn) alongside this code snippet makes the OCP and Polymorphism section strong?
+
+### Claude
+
+Comparing the 2-line polymorphic dispatch in `Waiter.takeOrder` against an `if (customer instanceof VIPCustomer) ... else if (customer instanceof CriticCustomer)` anti-pattern is the clearest way to demonstrate **OCP** and **Polymorphism**:
+1. **Concrete Evidence in Git History:** You can point the marker directly to `git diff stage-1..stage-2 -- src/entity/Waiter.java src/control/GameController.java`, which is completely empty (`0` lines changed).
+2. **Concrete Runtime Trace:**
+   - For C2 (`VIPCustomer`), `chooseMenuItem(menu)` inherits `Customer`'s `(2 - 1) % 3 = 1` (`Burger`, `1500` cents), while `calculateBill(1500)` dispatches to `VIPCustomer.calculateBill`, returning `1350` cents (`$13.50`).
+   - For C4 (`CriticCustomer`), `chooseMenuItem(menu)` dispatches to `CriticCustomer.chooseMenuItem`, returning `Pasta` (`1800` cents, 2 prep units), while `calculateBill(1800)` inherits `Customer.calculateBill`, returning `1800` cents (`$18.00`).
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**

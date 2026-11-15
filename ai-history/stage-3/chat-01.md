@@ -87,6 +87,93 @@ Returning `this.satisfaction > before` is a very thoughtful design detail:
 
 ---
 
+## 3. Enforcing Once-Per-Game Activation & Turn Countdown in `HappyHour.java` (6 Nov 2026)
+
+### Me
+
+> Here is my full implementation of `HappyHour.java` (`df9bdbe` / `e21b8b8`):
+>
+> ```java
+> package entity;
+>
+> public class HappyHour implements PricingPolicy {
+>     public static final int DURATION_TURNS = 2;
+>     public static final int SATISFACTION_RECOVERY = 15;
+>
+>     private boolean used;
+>     private int turnsRemaining;
+>
+>     public HappyHour() {
+>         this.used = false;
+>         this.turnsRemaining = 0;
+>     }
+>
+>     public boolean isAvailable() {
+>         return !used;
+>     }
+>
+>     public boolean isActive() {
+>         return turnsRemaining > 0;
+>     }
+>
+>     public int getTurnsRemaining() {
+>         return turnsRemaining;
+>     }
+>
+>     public void activate() throws InvalidActionException {
+>         if (used) {
+>             throw new InvalidActionException("Happy Hour has already been used this game");
+>         }
+>         this.used = true;
+>         this.turnsRemaining = DURATION_TURNS;
+>     }
+>
+>     public void endTurn() {
+>         if (turnsRemaining > 0) {
+>             turnsRemaining--;
+>         }
+>     }
+>
+>     @Override
+>     public int applyTo(int billCents) {
+>         if (billCents < 0) {
+>             throw new IllegalArgumentException("Bill cannot be negative");
+>         }
+>         if (!isActive()) {
+>             return billCents;
+>         }
+>         return (billCents * 80 + 50) / 100;
+>     }
+> }
+> ```
+>
+> Why is it important that `HappyHour.applyTo(int billCents)` checks `if (!isActive()) return billCents;` even though `GameController.currentPricing()` already checks `happyHour.isActive()`?
+
+### Claude
+
+Checking `if (!isActive()) return billCents;` inside `HappyHour.applyTo(int billCents)` makes `HappyHour` **self-protecting (defensive encapsulation)**:
+- Even if a caller holds a direct `PricingPolicy` reference to the `HappyHour` instance across multiple turns and calls `applyTo(...)` after `turnsRemaining` has reached `0`, `HappyHour` will never apply the 20% discount when inactive.
+- Likewise, throwing `InvalidActionException("Happy Hour has already been used this game")` inside `activate()` when `used` is `true` enforces the once-per-game rule inside the entity layer rather than relying solely on the UI/controller prompt check.
+
+---
+
+## 4. Strategy Pattern (`PricingPolicy`) vs. Decorator Pattern Trade-Off (6 Nov 2026)
+
+### Me
+
+> In `docs/design-log.md` (`6a19d7e`) and `docs/key-abstractions-and-solid.md` (`9bc8109`), I want to explain why we chose a `PricingPolicy` Strategy interface (`StandardPricing`, `HappyHour`) for Happy Hour discounts instead of using a Decorator around `MenuItem` (whereas for `ComboMeal` we used a `MenuItem` subclass wrapping two `MenuItem` components). Can you check my reasoning?
+>
+> - A `ComboMeal` is a permanent entry on the `Menu` with both a derived name (`"Salad + Pasta"`), a derived base price (`90%`), and summed prep units (`1 + 2 = 3`), so modelling `ComboMeal extends MenuItem` fits the domain.
+> - By contrast, `HappyHour` is a temporary 2-turn event that applies **after** the customer's own discount (`VIPCustomer.calculateBill`) and also triggers `+15` satisfaction recovery. Wrapping every `MenuItem` on the menu in a decorator for 2 turns wouldn't apply *after* `VIPCustomer.calculateBill`.
+
+### Claude
+
+That distinction is crystal clear and shows deep design thinking:
+1. **Why `ComboMeal` belongs in the `MenuItem` hierarchy:** A combo meal has preparation units (`getPrepUnits()`), a name (`getName()`), and a menu price (`getPriceCents()`), and is chosen from the `Menu` by customers (`chooseMenuItem(Menu)`) and cooked by the `Chef`.
+2. **Why `HappyHour` belongs behind `PricingPolicy`:** Section 4.3 of the brief explicitly states *"A VIP ordering during Happy Hour receives both discounts: the VIP 10% discount first, then 20% off that discounted bill."* Because the Happy Hour discount is a turn-scoped policy applied to the post-customer bill at order-creation time (`pricing.applyTo(customer.calculateBill(item.getPriceCents()))`), modelling it via the `PricingPolicy` interface (`StandardPricing` vs. `HappyHour`) matches the exact domain calculation order and satisfies the **Dependency Inversion Principle (DIP)**.
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**
