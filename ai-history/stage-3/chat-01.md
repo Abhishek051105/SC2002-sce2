@@ -133,6 +133,70 @@ Both details are exact:
 
 ---
 
+## 4. Implementing `handleHost()` and Same-Turn Host + Waiter Cooperation (8 Nov 2026)
+
+### Me (8 Nov, 18:40)
+
+> Here is my implementation of `handleHost()` in `GameController.java` (`221439d`):
+>
+> ```java
+> private void handleHost() {
+>     Host host = restaurant.getHost();
+>     while (true) {
+>         int cid = ui.askHostCustomerIdOrWait();
+>         if (cid == 0) {
+>             ui.showMessage("Host waits this turn.");
+>             return;
+>         }
+>         int tno = ui.askTableNo(restaurant.getTables().size());
+>         try {
+>             Customer c = getCustomerOrThrow(cid);
+>             Table t = restaurant.getTableByNumber(tno);
+>             if (t == null) {
+>                 throw new InvalidActionException("Table " + tno + " does not exist");
+>             }
+>             host.seat(c, t);
+>             restaurant.removeFromQueue(c);
+>             ui.showMessage("Host seated C" + cid + " at Table " + tno + ".");
+>             return;
+>         } catch (InvalidActionException e) {
+>             ui.showError(e.getMessage());
+>         }
+>     }
+> }
+> ```
+>
+> Because `handleHost()` runs immediately before `handleWaiter()` in `playTurn()`, if the `Host` seats C1 at Table 1 during `handleHost()`, C1's status is now `CustomerStatus.SEATED`. That means on the **very same turn**, the `Waiter` can choose `TAKE_ORDER` for C1, and the `Chef` can work on C1's order! Does the Stage 3 specification allow this 1-turn pipeline speedup?
+
+### Claude
+
+Yes! That is the exact strategic value of the `Host` in Stage 3 (Section 4.3 of the brief: *"A new staff member who can seat at most one queued customer at a free table per turn, in addition to the Waiter"*):
+- **In Stages 1 and 2 (without `Host`):** On Turn 1, the `Waiter` had to spend their single action seating C1 (`WAITING -> SEATED`), so C1's order could not be taken until Turn 2.
+- **In Stage 3 (with `Host`):**
+  1. `handleHost()` seats C1 at Table 1 (`WAITING -> SEATED`).
+  2. `handleWaiter()` takes C1's order on the same turn (`SEATED -> WAITING_FOR_FOOD`, creating `Order 1` with status `PLACED`).
+  3. `handleChef()` cooks 1 unit of `Order 1` on the same turn (`PLACED -> READY` for a 1-unit dish, or `1/2` / `1/3` for multi-unit dishes).
+- That saves a full turn of waiting decay for every customer seated by the `Host`, which is why the player can afford to cook 3-unit `ComboMeal`s (`Salad + Pasta`) in Stage 3 without failing the `60.0` satisfaction objective.
+
+---
+
+## 5. Handling EOF (`NoSuchElementException`) & Updating `docs/design-log.md` (8 Nov 2026)
+
+### Me (8 Nov, 20:05)
+
+> In `GameController.run()`, I wrapped `playTurn()` inside a `try / catch (NoSuchElementException e)` block that prints `"Input ended early; stopping simulation."` and exits the loop cleanly if `System.in` closes mid-game, and I added the Stage 3 controller and `Main` CLI mode notes to `docs/design-log.md` (`c77988d`).
+>
+> Can you check if my summary of the three `Main` execution modes (`regular`, `stage2`, and default Stage 3) in `docs/design-log.md` is clear?
+
+### Claude
+
+Your summary in `docs/design-log.md` is clear and well-organized:
+- **`java -cp out control.Main regular`:** Uses `GameConfig.ALL_REGULAR` and the 3-item base menu (`Salad`, `Burger`, `Pasta`) so Stage 1 test scenarios can be verified on the Stage 3 codebase.
+- **`java -cp out control.Main stage2`:** Uses `GameConfig.ARRIVAL_TYPES` (`REGULAR, VIP, REGULAR, CRITIC, REGULAR, REGULAR`) and the 3-item base menu so Stage 2 test scenarios can be verified on the Stage 3 codebase.
+- **`java -cp out control.Main` (default Stage 3):** Uses `GameConfig.ARRIVAL_TYPES` and registers the two `ComboMeal` instances (`Salad + Pasta` and `Burger + Salad`) on the `Menu` before starting `GameController`.
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**

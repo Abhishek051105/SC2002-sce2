@@ -151,6 +151,49 @@ For your `README.md` Stage 1 → Stage 2 section, structuring it directly around
 
 ---
 
+## 4. Defensive Copying & Input Validation in `ArrivalSchedule` (1 Nov 2026)
+
+### Me (1 Nov, 16:05)
+
+> In `ArrivalSchedule(List<Integer> arrivalTurns, List<CustomerType> arrivalTypes)`, I wrote:
+>
+> ```java
+> if (arrivalTurns == null || arrivalTypes == null || arrivalTurns.size() != arrivalTypes.size()) {
+>     throw new IllegalArgumentException("Arrival turns and types must be non-null and the same size");
+> }
+> this.arrivalTurns = new ArrayList<>(arrivalTurns);
+> this.arrivalTypes = new ArrayList<>(arrivalTypes);
+> ```
+>
+> Why is it good practice to copy `arrivalTurns` and `arrivalTypes` into `new ArrayList<>(...)` inside the constructor even when `GameConfig` uses `List.of(...)`?
+
+### Claude
+
+Making a **defensive copy** (`new ArrayList<>(arrivalTurns)`) inside the constructor is a core **Encapsulation** best practice in Java:
+- `ArrivalSchedule` cannot assume that every caller will pass an immutable `List.of(...)`. If a test or future caller passes a mutable `ArrayList` and later modifies that list outside `ArrivalSchedule`, `ArrivalSchedule`'s internal schedule could change mid-game or its two lists (`arrivalTurns` and `arrivalTypes`) could become different sizes after the constructor check already passed.
+- Copying both lists in the constructor guarantees that once `ArrivalSchedule` is constructed, its internal state cannot be mutated by external references.
+
+---
+
+## 5. Tracing Why C4 (`CriticCustomer`) Changes Kitchen Priority in Stage 2 (2 Nov 2026)
+
+### Me (2 Nov, 17:10)
+
+> While writing the Stage 1 -> Stage 2 section in `README.md`, I compared `tests/stage1_victory.txt` and `tests/stage2_victory.txt`. Even though both use the exact same manager inputs, let's check why the numbers change from `$66.00 / 79.2` in Stage 1 to `$73.50 / 75.6` in Stage 2:
+> - C2 (Turn 4) is now a `VIPCustomer`: orders Burger (`$15.00` with 10% VIP discount = `$13.50` instead of `$15.00`), and waits 2 turns before being served on Turn 6, losing `2 x 5 = 10` satisfaction (`90` instead of `84`).
+> - C4 (Turn 10) is now a `CriticCustomer`: instead of ordering Salad (`$9.00`, 1 unit) like a Regular C4 in Stage 1, C4 orders the most expensive item — `Pasta` (`$18.00`, 2 prep units) — and loses `12` satisfaction per waiting turn (`100 -> 88 -> 76 -> 64` when served on Turn 13, instead of `76` in Stage 1).
+>
+> Can I include this comparison in `README.md` to show how our polymorphic `VIPCustomer` and `CriticCustomer` hooks change both revenue and satisfaction without changing `GameController`?
+
+### Claude
+
+Yes! That comparison is ideal for `README.md` because it connects the code-level polymorphism directly to observable game behaviour:
+1. **VIP impact (C2):** Revenue changes by `-$1.50` (`$15.00 -> $13.50` via `VIPCustomer.calculateBill`) and paid satisfaction changes by `+6` (`84 -> 90` via `VIPCustomer.getSatisfactionDecay() = 5`).
+2. **Critic impact (C4):** Revenue changes by `+$9.00` (`$9.00 Salad -> $18.00 Pasta` via `CriticCustomer.chooseMenuItem`) and paid satisfaction changes by `-12` (`76 -> 64` because `Pasta` takes 2 Chef turns instead of 1 AND `CriticCustomer.getSatisfactionDecay() = 12`).
+3. **Net Stage 1 -> Stage 2 shift on the same manager script:** Total revenue rises from `$66.00` to `$73.50` (`-$1.50 + $9.00 = +$7.50`), and average satisfaction shifts from `79.2` to `75.6` (`(92 + 90 + 76 + 64 + 56) / 5 = 75.6`).
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**

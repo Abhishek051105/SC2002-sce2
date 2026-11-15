@@ -122,6 +122,75 @@ That explanation is clear and highlights two good points:
 
 ---
 
+## 4. Designing `Objective.java` and `GameConfig.java` (24 Oct 2026)
+
+### Me (24 Oct)
+
+> For checking whether the player won or lost after Turn 18, Section 2.1 of the brief specifies:
+> - Duration: `18` turns
+> - Starting tables: `2` (Table 1 and Table 2, one customer per table)
+> - Base objective: Serve at least `4` customers who complete payment, earn at least `$45.00` (`4500` cents), and finish with average satisfaction `>= 60.0`.
+>
+> Instead of putting `if (stats.getPaidCount() >= 4 && ...)` directly inside `GameController`, I created `Objective.java` and `GameConfig.java`:
+>
+> ```java
+> package control;
+>
+> import entity.GameStats;
+>
+> public class Objective {
+>     private final int minPaidCustomers;
+>     private final int minRevenueCents;
+>     private final double minAverageSatisfaction;
+>
+>     public Objective(int minPaidCustomers, int minRevenueCents, double minAverageSatisfaction) {
+>         this.minPaidCustomers = minPaidCustomers;
+>         this.minRevenueCents = minRevenueCents;
+>         this.minAverageSatisfaction = minAverageSatisfaction;
+>     }
+>
+>     public boolean isMet(GameStats stats) {
+>         return stats.getPaidCount() >= minPaidCustomers
+>                 && stats.getTotalRevenueCents() >= minRevenueCents
+>                 && stats.getAverageSatisfaction() >= minAverageSatisfaction;
+>     }
+>     // getters...
+> }
+> ```
+>
+> How does separating `Objective` and `GameConfig` from `GameController` help with SRP andOCP?
+
+### Claude
+
+Extracting `Objective` and `GameConfig` out of `GameController` is a strong **Single Responsibility Principle (SRP)** decision:
+1. **`GameController` focuses purely on turn progression:** It does not hardcode magic numbers like `18`, `4`, `4500`, or `60.0`.
+2. **`Objective` encapsulates the win condition:** Both `GameController` and `ConsoleUI.showFinalResult(stats, objective)` can query `objective.isMet(stats)` and read `objective.getMinPaidCustomers()`, `objective.getMinRevenueCents()`, and `objective.getMinAverageSatisfaction()` from a single source of truth.
+3. **`GameConfig` centralizes scenario parameters:** Keeping `MAX_TURNS = 18`, `NUM_TABLES = 2`, `ARRIVAL_TURNS`, and `createBaseObjective()` in `GameConfig` makes it easy to configure different schedules or test modes in `Main` without editing `GameController`.
+
+---
+
+## 5. Coordinating Step 4 (`handleEatingAndPayment`) and Step 5 (`handleEndOfTurnWaiting`) (26 Oct 2026)
+
+### Me (26 Oct)
+
+> I want to make sure my Step 4 (`handleEatingAndPayment`) and Step 5 (`handleEndOfTurnWaiting`) in `GameController` follow the exact turn-delay rules in Section 3.2 of the brief:
+> - A customer who became `SERVED` on an **earlier** turn (`c.getServedTurn() < currentTurn`) finishes eating and becomes `READY_TO_PAY` (`c.finishEating(currentTurn)`).
+> - A customer who became `READY_TO_PAY` on an **earlier** turn (`c.getReadyToPayTurn() < currentTurn`) can be processed by the Cashier (`cashier.processNextPayment(candidates, currentTurn)`).
+>
+> If I call `cashier.processNextPayment` first and then loop over `SERVED` customers to call `c.finishEating(currentTurn)` (or vice versa, since `processNextPayment` checks `c.getReadyToPayTurn() < currentTurn`), can a customer ever finish eating and pay on the same turn?
+
+### Claude
+
+Because `c.finishEating(currentTurn)` sets `readyToPayTurn = currentTurn` and `Cashier.processNextPayment(candidates, currentTurn)` strictly requires `c.getReadyToPayTurn() < currentTurn`, **a customer can never finish eating and pay on the same turn regardless of loop order**.
+
+Checking both conditions explicitly:
+- `c.getStatus() == CustomerStatus.SERVED && c.getServedTurn() < currentTurn` -> transitions to `READY_TO_PAY` with `readyToPayTurn = currentTurn`.
+- `c.getStatus() == CustomerStatus.READY_TO_PAY && c.getReadyToPayTurn() < currentTurn` -> eligible for `Cashier.processNextPayment(...)` on turn `readyToPayTurn + 1` at the earliest.
+
+matches the Pasta timing trace in Section 3.3 of the brief turn-for-turn (Served on Turn 5 -> `READY_TO_PAY` on Turn 6 -> `PAID` on Turn 7).
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**
