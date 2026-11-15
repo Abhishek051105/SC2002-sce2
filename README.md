@@ -11,6 +11,19 @@ paid customers, at least $45.00 revenue and an average satisfaction of at least 
 
 [Watch the demo (about 15 min)](https://youtu.be/e_V1cVIJygw)
 
+| Time | Segment |
+|---|---|
+| 0:00 | Overview: title slide, stage tags, README rules, code layout |
+| 1:05 | 1–2. Game launch, then manager choices |
+| 2:14 | 3. A dish going READY → SERVED → payment |
+| 4:13 | 4. VIP and Critic |
+| 5:28 | 5. Stage 3 features (Happy Hour, pricing, combos) |
+| 6:29 | 6. Victory and defeat, plus regression checks |
+| 7:30 | 7. Stage tags, change maps, class diagrams |
+| 10:00 | Design principles (SOLID) |
+| 11:12 | Sequence diagram |
+| 12:31 | Contributions: team overview, then Abhishek |
+| 13:17 / 13:33 / 13:58 / 14:27 | Contributions: Aaryan / Raghav / Ayush / Aekas |
 
 ## Build and run
 
