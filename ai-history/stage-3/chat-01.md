@@ -133,6 +133,39 @@ To explain the design impact beyond raw file counts, group the **unchanged class
 
 ---
 
+## Chat 04: Adding Design Annotations to the Stage 3 Class Diagram & Writing `RestaurantRushTest.java` (11–14 Nov 2026)
+
+### Me (11 Nov)
+
+> In `docs/uml/stage3/class-diagram.puml` (`5d57719`..`0f8be4f`), I added PlantUML `note` callouts pointing to the key design mechanisms in our diagram:
+> - **Encapsulation & Template Method** on `Customer` (`final` lifecycle transitions + `abstract` / hook methods)
+> - **Inheritance & ISP** on `Staff` (`Host`, `Waiter`, `Chef`, `Cashier` sharing `checkCanAct()` / `markActed()`)
+> - **OCP & Composition** on `ComboMeal` (`extends MenuItem` while composing `first : MenuItem` and `second : MenuItem`)
+> - **Dependency Inversion (DIP)** on `PricingPolicy` (`Waiter ..> PricingPolicy`, implemented by `StandardPricing` and `HappyHour`)
+>
+> Does annotating these four patterns directly on the class diagram help satisfy Section 5 of the brief ("Show encapsulation, inheritance, polymorphism and composition where used")?
+
+### ChatGPT
+
+Yes — Section 5 of the brief explicitly states: *"Show encapsulation, inheritance, polymorphism and composition where used."* Placing concise `note` callouts on the four exact places in the class diagram where those mechanisms appear makes it effortless for the marker to verify every rubric item directly on the diagram.
+
+### Me (14 Nov)
+
+> Finally, to make sure all 3 stages and domain edge cases can be verified automatically in one command, I wrote a self-contained test runner in `test/RestaurantRushTest.java` (`82b9a97`) with 30 assertions covering:
+> - `Money.format`, `MenuItem` validation, `ComboMeal` 90% rounding (`Salad + Pasta = 2430`, `Burger + Salad = 2160`) and summed prep units (`3` and `2`)
+> - `RegularCustomer`, `VIPCustomer`, and `CriticCustomer` decay rates (`8`, `5`, `12`), bill calculation (`10%` VIP discount), dish selection (`CriticCustomer` picking `Pasta` in Stage 2 and `Salad + Pasta` in Stage 3), and `recoverSatisfaction(15)` capping at `100`
+> - `HappyHour` once-per-game activation, 2-turn countdown, and stacked VIP + Happy Hour discount (`1500 -> 1350 -> 1080`)
+> - `Host`, `Waiter`, `Chef`, and `Cashier` one-action-per-turn guards and same-turn serve/eat/pay restrictions
+> - End-to-end execution of `stage1_victory.txt`, `stage2_victory.txt`, and `stage3_victory.txt`
+>
+> When I run `javac -d out $(find src test -name "*.java") && java -cp out RestaurantRushTest`, all 30 checks pass (`30 passed, 0 failed`).
+
+### ChatGPT
+
+Having a zero-dependency Java test runner (`test/RestaurantRushTest.java`) alongside your piped `.txt` simulation scripts gives you both **unit-level invariant verification** (testing individual methods and exception contracts on `ComboMeal`, `VIPCustomer`, `CriticCustomer`, `HappyHour`, `Host`, `Waiter`, `Chef`, `Cashier`) and **system-level integration verification** (running full 18-turn game scripts).
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**

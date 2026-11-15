@@ -145,6 +145,51 @@ Yes — that is a textbook application of **Template Method** and the **Open/Clo
 
 ---
 
+## 5. Tracking `servedTurn` and `readyToPayTurn` for Turn-Delay Rules (23 Oct 2026)
+
+### Me (23 Oct)
+
+> Section 3.2 Step 4 of the brief states:
+> - *"Each customer who became SERVED on an earlier turn finishes eating and becomes READY_TO_PAY."*
+> - *"A customer who became READY_TO_PAY this turn pays next turn at the earliest."*
+>
+> To support this in `Customer.java`, I added `private int servedTurn = -1;` and `private int readyToPayTurn = -1;`, and updated `serve(int currentTurn)` and `finishEating(int currentTurn)`:
+>
+> ```java
+> public void serve(int currentTurn) {
+>     if (currentTurn < 1) {
+>         throw new IllegalArgumentException("Turn must be at least 1");
+>     }
+>     if (status != CustomerStatus.WAITING_FOR_FOOD) {
+>         throw new IllegalStateException("Customer " + customerId + " cannot be served from status " + status);
+>     }
+>     this.status = CustomerStatus.SERVED;
+>     this.servedTurn = currentTurn;
+> }
+>
+> public void finishEating(int currentTurn) {
+>     if (currentTurn < 1) {
+>         throw new IllegalArgumentException("Turn must be at least 1");
+>     }
+>     if (status != CustomerStatus.SERVED) {
+>         throw new IllegalStateException("Customer " + customerId + " cannot finish eating from status " + status);
+>     }
+>     this.status = CustomerStatus.READY_TO_PAY;
+>     this.readyToPayTurn = currentTurn;
+> }
+> ```
+>
+> Why is storing `servedTurn` and `readyToPayTurn` on `Customer` better than keeping separate maps of turn timestamps inside `GameController`?
+
+### Copilot
+
+Storing `servedTurn` and `readyToPayTurn` directly inside `Customer` follows the **Information Expert** principle and **Encapsulation**:
+1. **Cohesion:** A customer's lifecycle timestamps belong to the customer instance that experienced those transitions.
+2. **Avoids Parallel Data Structures in `GameController`:** If `GameController` maintained separate `Map<Integer, Integer>` tables for served turns and ready-to-pay turns, those maps could easily get out of sync when customers pay or leave.
+3. ** Enables Direct Validation in `Cashier`:** When `Cashier.processNextPayment(candidates, currentTurn)` inspects each `Customer`, it can directly read `c.getReadyToPayTurn() < currentTurn` and pick the customer with the smallest `getReadyToPayTurn()` without needing extra parameters from `GameController`.
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**

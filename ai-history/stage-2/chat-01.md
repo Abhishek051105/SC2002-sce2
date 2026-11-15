@@ -85,6 +85,48 @@ Your `VIPCustomer` implementation is clean and avoids floating-point pitfalls:
 
 ---
 
+## 3. Verifying Liskov Substitution Principle (LSP) for `VIPCustomer` (31 Oct 2026)
+
+### Me (31 Oct)
+
+> After implementing `VIPCustomer.java`, I want to make sure `VIPCustomer` strictly satisfies the **Liskov Substitution Principle (LSP)** when substituted for a `Customer` reference in `Waiter`, `Cashier`, `Table`, and `GameController`.
+>
+> What specific conditions should I check to be sure `VIPCustomer` does not violate LSP?
+
+### Copilot
+
+To verify that `VIPCustomer` is a true behavioural subtype of `Customer` under **LSP**, check these four contract rules:
+
+1. **Preconditions Are Not Strengthened:**
+   - `Customer.calculateBill(int rawPriceCents)` accepts any `rawPriceCents >= 0` and throws `IllegalArgumentException` if `rawPriceCents < 0`. Because `VIPCustomer.calculateBill` calls `super.calculateBill(rawPriceCents)` first, it accepts the exact same domain of inputs and throws the exact same exception on negative inputs.
+2. **Postconditions Are Preserved:**
+   - `calculateBill` still returns a non-negative integer in cents (`(base * 90 + 50) / 100 >= 0`), and `getSatisfactionDecay()` returns a positive decay rate (`5`).
+3. **Lifecycle Invariants Are Unchanged:**
+   - Because `seat()`, `orderTaken()`, `serve(int)`, `finishEating(int)`, `markPaid()`, and `decreaseSatisfaction()` are `final` in `Customer`, `VIPCustomer` cannot alter the state-machine transitions (`WAITING -> SEATED -> WAITING_FOR_FOOD -> SERVED -> READY_TO_PAY -> PAID / LEFT`) or satisfaction bounds (`0..100`).
+4. **No `instanceof` Downcasts Needed by Clients:**
+   - `Waiter`, `Cashier`, `GameController`, and `ConsoleUI` interact with `VIPCustomer` purely through the `Customer` interface (`getSatisfactionDecay()`, `chooseMenuItem()`, `calculateBill()`, `getTypeLabel()`).
+
+---
+
+## 4. Comparing `VIPCustomer` vs. `RegularCustomer` on Turn 4 Arrival (31 Oct 2026)
+
+### Me (31 Oct)
+
+> Let's trace Customer 2 arriving on Turn 4 in our schedule:
+> - Customer 2 has `customerId = 2`, so `chooseMenuItem(menu)` picks index `(2 - 1) % 3 = 1`, which is `Burger` (`1500` cents, 1 prep unit).
+> - In Stage 1 (`RegularCustomer`), C2 waited on Turn 4 (`100 -> 92`) and Turn 5 (`92 -> 84`), was served on Turn 6 at satisfaction `84`, and paid `$15.00` (`1500` cents) on Turn 8.
+> - In Stage 2 (`VIPCustomer`), C2 waits on Turn 4 (`100 -> 95`) and Turn 5 (`95 -> 90`), is served on Turn 6 at satisfaction `90`, and pays `$13.50` (`1350` cents) on Turn 8.
+>
+> Everything works without changing `Waiter`, `Cashier`, or `Order`!
+
+### Copilot
+
+That trace confirms both Stage 2 `VIPCustomer` rules work end-to-end:
+- **Waiting decay (`5`/turn):** `100 -> 95 -> 90` across Turns 4 and 5 (saving 6 satisfaction points compared to a Regular customer).
+- **10% bill discount:** `VIPCustomer.calculateBill(1500)` returns `1350` cents (`$13.50`), which `Waiter.takeOrder` locks into `Order 2` when the order is placed on Turn 5, and `Cashier` collects on Turn 8.
+
+---
+
 ## Verification & Key Ideas Formulated (Appendix I)
 
 - **Key Ideas Formulated by Me:**
